@@ -104,15 +104,41 @@
     let ctx = canvas.getContext('2d');
     let drawing = false;
 
+    // Quelques réglages pour la qualité du trait
+    ctx.lineWidth = 2;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    // Pour gérer la position de la souris ou du doigt
+    function getMousePos(canvas, evt) {
+      let rect = canvas.getBoundingClientRect();
+      return {
+        x: evt.clientX - rect.left,
+        y: evt.clientY - rect.top
+      };
+    }
+
+    function getTouchPos(canvas, evt) {
+      let rect = canvas.getBoundingClientRect();
+      let touch = evt.touches[0];
+      return {
+        x: touch.clientX - rect.left,
+        y: touch.clientY - rect.top
+      };
+    }
+
+    // Événements souris
     canvas.addEventListener('mousedown', function(event) {
       drawing = true;
       ctx.beginPath();
-      ctx.moveTo(event.offsetX, event.offsetY);
+      let pos = getMousePos(canvas, event);
+      ctx.moveTo(pos.x, pos.y);
     });
 
     canvas.addEventListener('mousemove', function(event) {
       if (drawing) {
-        ctx.lineTo(event.offsetX, event.offsetY);
+        let pos = getMousePos(canvas, event);
+        ctx.lineTo(pos.x, pos.y);
         ctx.stroke();
       }
     });
@@ -120,6 +146,33 @@
     canvas.addEventListener('mouseup', function() {
       drawing = false;
     });
+
+    canvas.addEventListener('mouseleave', function() {
+      drawing = false;
+    });
+
+    // Événements tactiles (pour mobile)
+    canvas.addEventListener('touchstart', function(event) {
+      event.preventDefault();
+      drawing = true;
+      ctx.beginPath();
+      let pos = getTouchPos(canvas, event);
+      ctx.moveTo(pos.x, pos.y);
+    }, false);
+
+    canvas.addEventListener('touchmove', function(event) {
+      event.preventDefault();
+      if (drawing) {
+        let pos = getTouchPos(canvas, event);
+        ctx.lineTo(pos.x, pos.y);
+        ctx.stroke();
+      }
+    }, false);
+
+    canvas.addEventListener('touchend', function(event) {
+      event.preventDefault();
+      drawing = false;
+    }, false);
 
     function effacerSignature() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -195,8 +248,6 @@
       let fileName = `Attestation_${nom}_${prenom}.pdf`;
 
       // Téléchargement du PDF
-      // Si votre version de jsPDF supporte { returnPromise: true }, vous pouvez l'utiliser
-      // pour déclencher l'alerte APRÈS la fin du téléchargement, mais cela dépend des versions.
       doc.save(fileName);
 
       // Message après téléchargement

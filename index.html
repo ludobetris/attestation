@@ -191,6 +191,7 @@
     function getImageAsDataURL(url) {
       return new Promise((resolve, reject) => {
         let img = new Image();
+        // Important pour éviter certains soucis de crossOrigin
         img.crossOrigin = "anonymous";
         img.onload = function() {
           let tempCanvas = document.createElement("canvas");
@@ -234,37 +235,37 @@
 
       // Création du document PDF (format A4)
       let doc = new jsPDF("p", "mm", "a4");
-      // Largeur "théorique" du PDF = 210mm, hauteur = 297mm
+      // Largeur du PDF = 210mm, hauteur = 297mm
 
       // Insérer le logo (centré) si on a pu le charger
       if (logoData) {
-        let logoWidth = 60;
-        let logoHeight = 30;
-        let centerX = 105 - (logoWidth / 2); // 105 = milieu de la page A4
-        doc.addImage(logoData, "PNG", centerX, 20, logoWidth, logoHeight);
+        // On réduit un peu la taille pour éviter qu'il ne prenne trop de place
+        let logoWidth = 50;
+        let logoHeight = 25;
+        let centerX = 105 - (logoWidth / 2); // 105 = milieu de la page
+        doc.addImage(logoData, "PNG", centerX, 10, logoWidth, logoHeight);
       }
 
       // Titre principal
       doc.setFont("Helvetica", "bold");
       doc.setFontSize(20);
-      // On laisse un peu d'espace après le logo => y = 20 + 30 (logoHeight) + 20 = 70
-      doc.text("Attestation de Suivi", 105, 70, { align: "center" });
+      // Position du texte : y = 50 après le logo
+      doc.text("Attestation de Suivi", 105, 50, { align: "center" });
 
       doc.setFontSize(14);
-      doc.text("Formation Premiers Secours", 105, 80, { align: "center" });
+      doc.text("Formation Premiers Secours", 105, 58, { align: "center" });
 
       // Infos (centrées)
       doc.setFont("Helvetica", "normal");
       doc.setFontSize(12);
 
-      // On ajoute un peu d'espace avant d'afficher les infos
-      let yPos = 95;
+      let yPos = 72;
       doc.text(`Nom : ${nom}`, 105, yPos, { align: "center" });
-      yPos += 8;
+      yPos += 6;
       doc.text(`Prénom : ${prenom}`, 105, yPos, { align: "center" });
-      yPos += 8;
+      yPos += 6;
       doc.text(`Date : ${date}`, 105, yPos, { align: "center" });
-      yPos += 8;
+      yPos += 6;
       doc.text("Formatrice : Aurore Besse", 105, yPos, { align: "center" });
 
       // Thèmes suivis
@@ -284,25 +285,24 @@
         "AVC"
       ];
 
-      yPos += 15;
+      yPos += 10;
       doc.setFont("Helvetica", "bold");
       doc.text("Thèmes abordés :", 105, yPos, { align: "center" });
       doc.setFont("Helvetica", "normal");
 
-      yPos += 10;
+      yPos += 6;
       themes.forEach(theme => {
         doc.text(`- ${theme}`, 105, yPos, { align: "center" });
-        yPos += 8;
+        yPos += 6;
       });
 
       // Signature
-      yPos += 15;
+      yPos += 10;
       doc.setFont("Helvetica", "bold");
       doc.text("Signature du participant :", 105, yPos, { align: "center" });
       yPos += 5;
 
-      // On insère la signature en la centrant
-      // On fixe la largeur de la signature à 80mm, hauteur 40mm
+      // On insère la signature, largeur 80mm x hauteur 40mm
       let signatureWidth = 80;
       let signatureHeight = 40;
       let signatureX = 105 - (signatureWidth / 2);
@@ -320,3 +320,4 @@
   </script>
 </body>
 </html>
+

@@ -79,10 +79,29 @@
       .signature-btn:hover {
           background-color: #c0392b;
       }
+      /* Section de signature et de génération masquée au départ */
+      #signatureSection {
+          display: none;
+      }
+
+      /* Corrections d’alignement pour la signature */
+      #signatureSection {
+          text-align: center; /* Pour centrer le texte et les éléments à l'intérieur */
+      }
+      #signatureSection canvas {
+          display: block;
+          margin: 20px auto; /* Centre le canvas */
+      }
+      #signatureSection .signature-btn,
+      #signatureSection button.btn {
+          display: block;
+          margin: 10px auto; /* Centre les boutons */
+      }
   </style>
 </head>
 <body>
   <div class="container">
+    <!-- Le logo est présent dans la page HTML, mais ne sera pas chargé dans les PDF -->
     <img
       src="https://github.com/ludobetris/3d-models/raw/main/logo___2019.png"
       class="logo"
@@ -90,15 +109,23 @@
     />
     <h2>Attestation de Suivi du Cours de Premiers Secours</h2>
 
+    <!-- Bouton pour lire l'attestation (ouvre un PDF en lecture) -->
+    <button type="button" class="btn" onclick="lireAttestation()">Lire l'attestation</button>
+
     <form id="attestationForm">
       <input type="text" id="nom" placeholder="Nom" required />
       <input type="text" id="prenom" placeholder="Prénom" required />
       <p><strong>Date :</strong> <span id="dateActuelle"></span></p>
 
-      <canvas id="signatureCanvas" width="300" height="150"></canvas>
-      <button type="button" class="btn signature-btn" onclick="effacerSignature()">Effacer la signature</button>
+      <!-- Section masquée qui s'affichera après avoir lu l'attestation -->
+      <div id="signatureSection">
+        <p style="text-align:center;"><strong>Signature</strong></p>
+        <canvas id="signatureCanvas" width="300" height="150"></canvas>
+        <button type="button" class="btn signature-btn" onclick="effacerSignature()">Supprimer la signature</button>
 
-      <button type="button" class="btn" onclick="genererPDF()">Générer PDF & Télécharger</button>
+        <button type="button" class="btn" onclick="genererPDF()">Générer PDF & Télécharger</button>
+      </div>
+
     </form>
   </div>
 
@@ -111,12 +138,10 @@
     let ctx = canvas.getContext('2d');
     let drawing = false;
 
-    // Quelques réglages pour la qualité du trait
     ctx.lineWidth = 2;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
 
-    // Récupération de la position (souris)
     function getMousePos(canvas, evt) {
       let rect = canvas.getBoundingClientRect();
       return {
@@ -125,7 +150,6 @@
       };
     }
 
-    // Récupération de la position (tactile)
     function getTouchPos(canvas, evt) {
       let rect = canvas.getBoundingClientRect();
       let touch = evt.touches[0];
@@ -135,7 +159,6 @@
       };
     }
 
-    // Événements souris
     canvas.addEventListener('mousedown', function(event) {
       drawing = true;
       ctx.beginPath();
@@ -182,16 +205,14 @@
       drawing = false;
     }, false);
 
-    // Effacer la signature
     function effacerSignature() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
     }
 
-    // Fonction pour charger une image en base64
+    // (Fonction conservée pour rester proche du code initial, même si elle n'est pas utilisée pour les images)
     function getImageAsDataURL(url) {
       return new Promise((resolve, reject) => {
         let img = new Image();
-        // Important pour éviter certains soucis de crossOrigin
         img.crossOrigin = "anonymous";
         img.onload = function() {
           let tempCanvas = document.createElement("canvas");
@@ -208,7 +229,89 @@
       });
     }
 
-    // --- Génération et téléchargement du PDF ---
+    // --- Étape 1 : L'utilisateur doit lire l'attestation (version vide/lecture) ---
+    function lireAttestation() {
+      const { jsPDF } = window.jspdf;
+
+      let docLecture = new jsPDF("p", "mm", "a4");
+
+      // Titre principal
+      docLecture.setFont("Helvetica", "bold");
+      docLecture.setFontSize(20);
+      docLecture.text("Attestation de Suivi", 105, 30, { align: "center" });
+
+      docLecture.setFontSize(14);
+      docLecture.text("Formation Premiers Secours", 105, 38, { align: "center" });
+
+      // Corps du texte
+      docLecture.setFont("Helvetica", "normal");
+      docLecture.setFontSize(12);
+
+      let yPos = 52;
+      docLecture.text(
+        "Cette attestation certifie que le participant a suivi le cours",
+        105,
+        yPos,
+        { align: "center" }
+      );
+      yPos += 6;
+      docLecture.text(
+        "de Premiers Secours proposé par Solioz & Merkli Travaux Publics SA.",
+        105,
+        yPos,
+        { align: "center" }
+      );
+      yPos += 12;
+      docLecture.text(
+        "Veuillez lire ce document en entier avant de signer",
+        105,
+        yPos,
+        { align: "center" }
+      );
+      yPos += 6;
+      docLecture.text(
+        "et générer l'attestation finale.",
+        105,
+        yPos,
+        { align: "center" }
+      );
+
+      // Thèmes abordés
+      const themesLecture = [
+        "Chaîne de secours",
+        "Législation",
+        "ORA",
+        "Numéros d'urgence",
+        "RCP",
+        "Insolation, coups de chaleur",
+        "Hémorragie externe",
+        "Électrocution",
+        "Blessure par écrasement",
+        "Étouffement",
+        "Choc anaphylactique",
+        "Crise cardiaque",
+        "AVC"
+      ];
+
+      yPos += 18;
+      docLecture.setFont("Helvetica", "bold");
+      docLecture.text("Thèmes abordés :", 105, yPos, { align: "center" });
+      docLecture.setFont("Helvetica", "normal");
+
+      yPos += 8;
+      themesLecture.forEach(theme => {
+        docLecture.text(`- ${theme}`, 105, yPos, { align: "center" });
+        yPos += 6;
+      });
+
+      // Ouvre le PDF dans un nouvel onglet pour lecture
+      window.open(docLecture.output('bloburl'), '_blank');
+
+      // Affiche la zone de signature et le bouton de génération PDF
+      document.getElementById('signatureSection').style.display = 'block';
+    }
+
+    // --- Étape 2 : Génération et téléchargement du PDF final ---
     async function genererPDF() {
       const { jsPDF } = window.jspdf;
 
@@ -223,43 +326,23 @@
 
       // Conversion de la signature en image
       let signatureImage = canvas.toDataURL("image/png");
-      
-      // Chargement du logo en base64
-      let logoData;
-      try {
-        logoData = await getImageAsDataURL("https://github.com/ludobetris/3d-models/raw/main/logo___2019.png");
-      } catch (e) {
-        console.error("Impossible de charger le logo :", e);
-        logoData = null;
-      }
 
       // Création du document PDF (format A4)
       let doc = new jsPDF("p", "mm", "a4");
-      // Largeur du PDF = 210mm, hauteur = 297mm
-
-      // Insérer le logo (centré) si on a pu le charger
-      if (logoData) {
-        // On réduit un peu la taille pour éviter qu'il ne prenne trop de place
-        let logoWidth = 50;
-        let logoHeight = 25;
-        let centerX = 105 - (logoWidth / 2); // 105 = milieu de la page
-        doc.addImage(logoData, "PNG", centerX, 10, logoWidth, logoHeight);
-      }
 
       // Titre principal
       doc.setFont("Helvetica", "bold");
       doc.setFontSize(20);
-      // Position du texte : y = 50 après le logo
-      doc.text("Attestation de Suivi", 105, 50, { align: "center" });
+      doc.text("Attestation de Suivi", 105, 30, { align: "center" });
 
       doc.setFontSize(14);
-      doc.text("Formation Premiers Secours", 105, 58, { align: "center" });
+      doc.text("Formation Premiers Secours", 105, 38, { align: "center" });
 
       // Infos (centrées)
       doc.setFont("Helvetica", "normal");
       doc.setFontSize(12);
 
-      let yPos = 72;
+      let yPos = 52;
       doc.text(`Nom : ${nom}`, 105, yPos, { align: "center" });
       yPos += 6;
       doc.text(`Prénom : ${prenom}`, 105, yPos, { align: "center" });

@@ -7,9 +7,11 @@
   <!-- Import de la librairie jsPDF -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
-      body {
+      /* Empêcher le défilement horizontal */
+      html, body {
           margin: 0;
           padding: 0;
+          overflow-x: hidden;
           font-family: Arial, sans-serif;
           background-color: #f4f4f4;
           text-align: center;
@@ -28,8 +30,10 @@
           font-size: 22px;
           margin-bottom: 20px;
       }
+      /* Le logo ne doit pas déborder sur les petits écrans */
       .logo {
           width: 120px;
+          max-width: 100%;
           margin-bottom: 20px;
       }
       form {
@@ -46,11 +50,14 @@
           border-radius: 5px;
           text-align: center;
       }
+      /* Canvas ne déborde pas sur petits écrans */
       canvas {
           border: 2px solid #2c3e50;
           margin: 20px 0;
           border-radius: 5px;
           background-color: #fff;
+          max-width: 100%;
+          height: auto;
       }
       .btn {
           background-color: #2c3e50;
@@ -76,7 +83,6 @@
 </head>
 <body>
   <div class="container">
-    <!-- Logo affiché dans la page HTML -->
     <img
       src="https://github.com/ludobetris/3d-models/raw/main/logo___2019.png"
       class="logo"
@@ -216,19 +222,27 @@
 
       // Conversion de la signature en image
       let signatureImage = canvas.toDataURL("image/png");
+      
       // Chargement du logo en base64
-      let logoData = await getImageAsDataURL("https://github.com/ludobetris/3d-models/raw/main/logo___2019.png");
+      let logoData;
+      try {
+        logoData = await getImageAsDataURL("https://github.com/ludobetris/3d-models/raw/main/logo___2019.png");
+      } catch (e) {
+        console.error("Impossible de charger le logo :", e);
+        logoData = null;
+      }
 
       // Création du document PDF (format A4)
       let doc = new jsPDF("p", "mm", "a4");
       // Largeur "théorique" du PDF = 210mm, hauteur = 297mm
 
-      // Insérer le logo (centré)
-      // On choisit une largeur et une hauteur d'image cohérentes (60 x 30 mm)
-      let logoWidth = 60;
-      let logoHeight = 30;
-      let centerX = 105 - (logoWidth / 2); // 105 = milieu de la page A4
-      doc.addImage(logoData, "PNG", centerX, 20, logoWidth, logoHeight);
+      // Insérer le logo (centré) si on a pu le charger
+      if (logoData) {
+        let logoWidth = 60;
+        let logoHeight = 30;
+        let centerX = 105 - (logoWidth / 2); // 105 = milieu de la page A4
+        doc.addImage(logoData, "PNG", centerX, 20, logoWidth, logoHeight);
+      }
 
       // Titre principal
       doc.setFont("Helvetica", "bold");
@@ -243,7 +257,7 @@
       doc.setFont("Helvetica", "normal");
       doc.setFontSize(12);
 
-      // On ajoute un peu d'espace avant d'afficher les infos : y = 95
+      // On ajoute un peu d'espace avant d'afficher les infos
       let yPos = 95;
       doc.text(`Nom : ${nom}`, 105, yPos, { align: "center" });
       yPos += 8;

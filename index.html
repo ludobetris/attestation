@@ -76,6 +76,7 @@
 </head>
 <body>
   <div class="container">
+    <!-- Logo affiché dans la page HTML -->
     <img
       src="https://github.com/ludobetris/3d-models/raw/main/logo___2019.png"
       class="logo"
@@ -109,7 +110,7 @@
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
 
-    // Pour gérer la position de la souris ou du doigt
+    // Récupération de la position (souris)
     function getMousePos(canvas, evt) {
       let rect = canvas.getBoundingClientRect();
       return {
@@ -118,6 +119,7 @@
       };
     }
 
+    // Récupération de la position (tactile)
     function getTouchPos(canvas, evt) {
       let rect = canvas.getBoundingClientRect();
       let touch = evt.touches[0];
@@ -151,7 +153,7 @@
       drawing = false;
     });
 
-    // Événements tactiles (pour mobile)
+    // Événements tactiles
     canvas.addEventListener('touchstart', function(event) {
       event.preventDefault();
       drawing = true;
@@ -174,8 +176,29 @@
       drawing = false;
     }, false);
 
+    // Effacer la signature
     function effacerSignature() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    // Fonction pour charger une image en base64
+    function getImageAsDataURL(url) {
+      return new Promise((resolve, reject) => {
+        let img = new Image();
+        img.crossOrigin = "anonymous";
+        img.onload = function() {
+          let tempCanvas = document.createElement("canvas");
+          tempCanvas.width = img.width;
+          tempCanvas.height = img.height;
+          let tempCtx = tempCanvas.getContext("2d");
+          tempCtx.drawImage(img, 0, 0);
+          resolve(tempCanvas.toDataURL("image/png"));
+        };
+        img.onerror = function(err) {
+          reject(err);
+        };
+        img.src = url;
+      });
     }
 
     // --- Génération et téléchargement du PDF ---
@@ -193,28 +216,42 @@
 
       // Conversion de la signature en image
       let signatureImage = canvas.toDataURL("image/png");
+      // Chargement du logo en base64
+      let logoData = await getImageAsDataURL("https://github.com/ludobetris/3d-models/raw/main/logo___2019.png");
 
       // Création du document PDF (format A4)
       let doc = new jsPDF("p", "mm", "a4");
+      // Largeur "théorique" du PDF = 210mm, hauteur = 297mm
+
+      // Insérer le logo (centré)
+      // On choisit une largeur et une hauteur d'image cohérentes (60 x 30 mm)
+      let logoWidth = 60;
+      let logoHeight = 30;
+      let centerX = 105 - (logoWidth / 2); // 105 = milieu de la page A4
+      doc.addImage(logoData, "PNG", centerX, 20, logoWidth, logoHeight);
 
       // Titre principal
       doc.setFont("Helvetica", "bold");
       doc.setFontSize(20);
-      doc.text("Attestation de Suivi", 105, 20, { align: "center" });
+      // On laisse un peu d'espace après le logo => y = 20 + 30 (logoHeight) + 20 = 70
+      doc.text("Attestation de Suivi", 105, 70, { align: "center" });
 
       doc.setFontSize(14);
-      doc.text("Formation Premiers Secours", 105, 30, { align: "center" });
+      doc.text("Formation Premiers Secours", 105, 80, { align: "center" });
 
-      // Infos
+      // Infos (centrées)
       doc.setFont("Helvetica", "normal");
       doc.setFontSize(12);
-      doc.text("Solioz & Merkli Travaux Publics SA", 20, 45);
 
-      doc.text(`Nom : ${nom}`, 20, 55);
-      doc.text(`Prénom : ${prenom}`, 20, 60);
-      doc.text(`Date : ${date}`, 20, 65);
-
-      doc.text("Formatrice : Aurore Besse", 20, 75);
+      // On ajoute un peu d'espace avant d'afficher les infos : y = 95
+      let yPos = 95;
+      doc.text(`Nom : ${nom}`, 105, yPos, { align: "center" });
+      yPos += 8;
+      doc.text(`Prénom : ${prenom}`, 105, yPos, { align: "center" });
+      yPos += 8;
+      doc.text(`Date : ${date}`, 105, yPos, { align: "center" });
+      yPos += 8;
+      doc.text("Formatrice : Aurore Besse", 105, yPos, { align: "center" });
 
       // Thèmes suivis
       const themes = [
@@ -233,16 +270,29 @@
         "AVC"
       ];
 
-      doc.text("Thèmes abordés :", 20, 85);
-      let yPosition = 90;
+      yPos += 15;
+      doc.setFont("Helvetica", "bold");
+      doc.text("Thèmes abordés :", 105, yPos, { align: "center" });
+      doc.setFont("Helvetica", "normal");
+
+      yPos += 10;
       themes.forEach(theme => {
-        doc.text(`- ${theme}`, 25, yPosition);
-        yPosition += 5;
+        doc.text(`- ${theme}`, 105, yPos, { align: "center" });
+        yPos += 8;
       });
 
       // Signature
-      doc.text("Signature du participant :", 20, yPosition + 10);
-      doc.addImage(signatureImage, "PNG", 20, yPosition + 15, 80, 40);
+      yPos += 15;
+      doc.setFont("Helvetica", "bold");
+      doc.text("Signature du participant :", 105, yPos, { align: "center" });
+      yPos += 5;
+
+      // On insère la signature en la centrant
+      // On fixe la largeur de la signature à 80mm, hauteur 40mm
+      let signatureWidth = 80;
+      let signatureHeight = 40;
+      let signatureX = 105 - (signatureWidth / 2);
+      doc.addImage(signatureImage, "PNG", signatureX, yPos, signatureWidth, signatureHeight);
 
       // Nom du fichier PDF
       let fileName = `Attestation_${nom}_${prenom}.pdf`;
